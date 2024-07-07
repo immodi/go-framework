@@ -1,33 +1,42 @@
 package routes
 
 import (
-	"encoding/json"
 	"fmt"
+	"immmodi/framework/helpers"
+	"immmodi/framework/types"
+	"net/http"
 )
 
-type RouterMethod struct{}
+type RouterMethod types.RouterMethod
 
-func (RouterMethod) TestResponse() ([]byte, string) {
-	return []byte(fmt.Sprintf("<h1>%s</h1>", "sladhkasbdjashdbaj")), "text/html"
+func (RouterMethod) Test(r *http.Request) *types.Response {
+	println(r.Method)
+	response := types.Response{
+		Payload:     []byte(fmt.Sprintf("<h1>%s</h1>", "sladhkasbdjashdbaj")),
+		ContentType: "text/html",
+	}
+
+	return &response
 }
 
-func (RouterMethod) JResponse() ([]byte, string) {
-	jsonString := `{"test":"test","ajsdbssad":"j","asdkjkabshd":1,"bool":true,"aljsdbahsdba":[true,1,"asdahbds"]}`
+func (RouterMethod) J(r *http.Request) *types.Response {
+	println(r.Method)
+	jsonString := helpers.JsonStringMaker()
+	jsonData, contentType := helpers.JsonStringParser(jsonString)
 
-	var data map[string]any
-
-	// Unmarshal JSON string into the map
-	err := json.Unmarshal([]byte(jsonString), &data)
-	if err != nil {
-		fmt.Println("Error parsing JSON:", err)
-		panic(err)
+	response := types.Response{
+		Payload:     *jsonData,
+		ContentType: contentType,
 	}
 
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		fmt.Println("Error marshalling JSON:", err)
-		panic(err)
+	return &response
+}
+
+func (RouterMethod) Root(r *http.Request) *types.Response {
+	response := types.Response{
+		Payload:     []byte(fmt.Sprintf("<h1>%s</h1>", "Hello, World!")),
+		ContentType: "text/html",
 	}
 
-	return jsonData, "application/json"
+	return &response
 }
