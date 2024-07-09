@@ -1,7 +1,7 @@
 package main
 
 import (
-	"immmodi/framework/routes"
+	"immmodi/framework/views"
 	"log"
 	"net/http"
 )
@@ -9,5 +9,5 @@ import (
 func main() {
 	log.Println("Starting server http://127.0.0.1:8000")
 
-	http.ListenAndServe(":8000", routes.GetAllRoutes())
+	http.ListenAndServe(":8000", views.GetAllRoutes())
 }

@@ -1,6 +1,11 @@
-package handlers
+package router
 
-import "net/http"
+import (
+	"fmt"
+	"immmodi/framework/helpers"
+	"net/http"
+	"regexp"
+)
 
 type Router struct {
 	routes []RouteEntry
@@ -45,13 +50,38 @@ func (rtr *Router) Route(method, path string, handlerFunc func(r *http.Request) 
 	rtr.routes = append(rtr.routes, e)
 }
 
+func (rtr *Router) ServeStatic() {
+	isStatic := helpers.CheckForStaticFiles()
+	if isStatic {
+		e := RouteEntry{
+			Method: "GET",
+			Path:   "/static/",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				fs := http.FileServer(http.Dir("static"))
+				handler := http.StripPrefix("/static/", fs)
+				handler.ServeHTTP(w, r)
+			},
+		}
+		rtr.routes = append(rtr.routes, e)
+	}
+}
+
 func (re *RouteEntry) Match(r *http.Request) bool {
+
 	if r.Method != re.Method {
-		return false // Method mismatch
+		return false
 	}
 
 	if r.URL.Path != re.Path {
-		return false // Path mismatch
+		re, err := regexp.Compile(`^/static/.*$`)
+		if err != nil {
+			fmt.Println("Error compiling regex:", err)
+			println(err.Error())
+		}
+		if matched := re.MatchString(r.URL.Path); matched {
+			return true
+		}
+		return false
 	}
 
 	return true
