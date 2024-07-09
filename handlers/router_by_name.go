@@ -2,21 +2,29 @@ package handlers
 
 import (
 	"fmt"
-	"immmodi/framework/routes"
-	"immmodi/framework/types"
 	"net/http"
 	"reflect"
 	"strings"
 	"time"
 )
 
-type Response types.Response
+type Route struct {
+	RouteName string
+}
 
-func MakeHandler(fn func(http.ResponseWriter, *http.Request, *types.RouterMethodsResult)) http.HandlerFunc {
+type RouterMethod struct{}
+
+type RouterMethodsResult struct {
+	Methods            map[string]reflect.Method
+	MethodsStringArray []string
+	RoutesArray        []Route
+}
+
+func RouterByName(fn func(http.ResponseWriter, *http.Request, *RouterMethodsResult)) http.HandlerFunc {
 	//makes the handler and returns it
 	return func(w http.ResponseWriter, r *http.Request) {
-		ch := make(chan types.RouterMethodsResult, 1)
-		var methodsData types.RouterMethodsResult
+		ch := make(chan RouterMethodsResult, 1)
+		var methodsData RouterMethodsResult
 
 		go GetAllRouterMethods(ch)
 
@@ -30,47 +38,8 @@ func MakeHandler(fn func(http.ResponseWriter, *http.Request, *types.RouterMethod
 	}
 }
 
-func GetAllRouterMethods(ch chan types.RouterMethodsResult) {
-	// called asyncly at the start and returns all data related to methods that are binding to 'RouterMethod'
-
-	var routerMethod routes.RouterMethod
-	structType := reflect.TypeOf(routerMethod)
-
-	methods := make(map[string]reflect.Method)
-	methodsStringArray := make([]string, 0)
-	routesArray := make([]types.Route, 0)
-
-	for i := 0; i < structType.NumMethod(); i++ {
-		method := structType.Method(i)
-		methodsStringArray = append(methodsStringArray, method.Name)
-
-		var route string
-		// if the method_name is 'root'
-		if strings.ToLower(method.Name) == "root" {
-			//change route to '/'
-			route = "/"
-		} else {
-			// else change it to (/ + method_name)
-			route = strings.ToLower("/" + method.Name)
-		}
-
-		(routesArray) = append((routesArray), types.Route{
-			RouteName: route,
-		})
-		methods[method.Name] = method
-	}
-
-	result := types.RouterMethodsResult{
-		Methods:            methods,
-		MethodsStringArray: methodsStringArray,
-		RoutesArray:        routesArray,
-	}
-
-	ch <- result
-}
-
 // the http route handler that will be called on '/'
-func RootHandler(w http.ResponseWriter, r *http.Request, methodsData *types.RouterMethodsResult) {
+func RootHandler(w http.ResponseWriter, r *http.Request, methodsData *RouterMethodsResult) {
 
 	// loop through all RouteHanlder method routes
 	for _, route := range methodsData.RoutesArray {
@@ -101,7 +70,46 @@ func RootHandler(w http.ResponseWriter, r *http.Request, methodsData *types.Rout
 	http.NotFound(w, r)
 }
 
-func RouteHandler(w http.ResponseWriter, r *http.Request, methodsStringArray *[]string, methods *map[string]reflect.Method, routeName string) (*types.Response, error) {
+func GetAllRouterMethods(ch chan RouterMethodsResult) {
+	// called asyncly at the start and returns all data related to methods that are binding to 'RouterMethod'
+
+	var routerMethod RouterMethod
+	structType := reflect.TypeOf(routerMethod)
+
+	methods := make(map[string]reflect.Method)
+	methodsStringArray := make([]string, 0)
+	routesArray := make([]Route, 0)
+
+	for i := 0; i < structType.NumMethod(); i++ {
+		method := structType.Method(i)
+		methodsStringArray = append(methodsStringArray, method.Name)
+
+		var route string
+		// if the method_name is 'root'
+		if strings.ToLower(method.Name) == "root" {
+			//change route to '/'
+			route = "/"
+		} else {
+			// else change it to (/ + method_name)
+			route = strings.ToLower("/" + method.Name)
+		}
+
+		(routesArray) = append((routesArray), Route{
+			RouteName: route,
+		})
+		methods[method.Name] = method
+	}
+
+	result := RouterMethodsResult{
+		Methods:            methods,
+		MethodsStringArray: methodsStringArray,
+		RoutesArray:        routesArray,
+	}
+
+	ch <- result
+}
+
+func RouteHandler(w http.ResponseWriter, r *http.Request, methodsStringArray *[]string, methods *map[string]reflect.Method, routeName string) (*Response, error) {
 	response, err := GetResponseByRoute(methodsStringArray, methods, routeName, r)
 	// http response to return
 
@@ -113,9 +121,9 @@ func RouteHandler(w http.ResponseWriter, r *http.Request, methodsStringArray *[]
 	return response, nil
 }
 
-func GetResponseByRoute(methodsStringArray *[]string, methods *map[string]reflect.Method, routeName string, r *http.Request) (*types.Response, error) {
+func GetResponseByRoute(methodsStringArray *[]string, methods *map[string]reflect.Method, routeName string, r *http.Request) (*Response, error) {
 	routeHandler, err := GetRouteHandlerString(routeName, methodsStringArray)
-	response := &types.Response{}
+	response := &Response{}
 	// the method name that will be called to get the response
 	if err != nil {
 		response.ContentType = "text/plain; charset=utf-8"
@@ -147,22 +155,22 @@ func GetRouteHandlerString(routeName string, methodsStringArray *[]string) (stri
 	return "", fmt.Errorf("this route: %s doesn't exist", routeName)
 }
 
-func RunMethodByName(methods *map[string]reflect.Method, methodName string, r *http.Request) (*types.Response, error) {
-	var routerMethod routes.RouterMethod
+func RunMethodByName(methods *map[string]reflect.Method, methodName string, r *http.Request) (*Response, error) {
+	var routerMethod RouterMethod
 	structValue := reflect.ValueOf(routerMethod)
 	requestStruct := reflect.ValueOf(r)
 
 	if method, exists := (*methods)[methodName]; exists {
 		output := method.Func.Call([]reflect.Value{structValue, requestStruct})
-		response, ok := output[0].Interface().(*types.Response)
+		response, ok := output[0].Interface().(*Response)
 		if !ok {
-			return &types.Response{}, fmt.Errorf("couldn't convert method: %s to route", methodName)
+			return &Response{}, fmt.Errorf("couldn't convert method: %s to route", methodName)
 		}
 		return response, nil
 
 	} else {
 		fmt.Printf("Method %s not found\n", methodName)
-		return &types.Response{
+		return &Response{
 			Payload:     []byte(fmt.Errorf("method %s not found", methodName).Error()),
 			ContentType: "text/plain; charset=utf-8",
 		}, fmt.Errorf("couldn't convert method: %s to route", methodName)

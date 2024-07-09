@@ -1,7 +1,7 @@
 package main
 
 import (
-	"immmodi/framework/handlers"
+	"immmodi/framework/routes"
 	"log"
 	"net/http"
 )
@@ -9,6 +9,5 @@ import (
 func main() {
 	log.Println("Starting server http://127.0.0.1:8000")
 
-	http.HandleFunc("/", handlers.MakeHandler(handlers.RootHandler))
-	http.ListenAndServe(":8000", nil)
+	http.ListenAndServe(":8000", routes.GetAllRoutes())
 }

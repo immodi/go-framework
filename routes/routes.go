@@ -2,29 +2,32 @@ package routes
 
 import (
 	"fmt"
+	"immmodi/framework/handlers"
 	"immmodi/framework/helpers"
-	"immmodi/framework/types"
 	"net/http"
 )
 
-type RouterMethod types.RouterMethod
-
-func (RouterMethod) Test(r *http.Request) *types.Response {
-	println(r.Method)
-	response := types.Response{
+func Test(r *http.Request) *handlers.Response {
+	return &handlers.Response{
 		Payload:     []byte(fmt.Sprintf("<h1>%s</h1>", "sladhkasbdjashdbaj")),
 		ContentType: "text/html",
 	}
-
-	return &response
 }
 
-func (RouterMethod) J(r *http.Request) *types.Response {
-	println(r.Method)
-	jsonString := helpers.JsonStringMaker()
+func J(r *http.Request) *handlers.Response {
+	j := helpers.JsonConstructor{}
+
+	jsonString := j.JParseObject(
+		"test",
+		j.JParseArray(
+			j.JParseBool(true),
+			j.JParseNil(),
+		),
+	).String()
+
 	jsonData, contentType := helpers.JsonStringParser(jsonString)
 
-	response := types.Response{
+	response := handlers.Response{
 		Payload:     *jsonData,
 		ContentType: contentType,
 	}
@@ -32,11 +35,9 @@ func (RouterMethod) J(r *http.Request) *types.Response {
 	return &response
 }
 
-func (RouterMethod) Root(r *http.Request) *types.Response {
-	response := types.Response{
+func Root(r *http.Request) *handlers.Response {
+	return &handlers.Response{
 		Payload:     []byte(fmt.Sprintf("<h1>%s</h1>", "Hello, World!")),
 		ContentType: "text/html",
 	}
-
-	return &response
 }
