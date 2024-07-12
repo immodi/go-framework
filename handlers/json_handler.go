@@ -5,7 +5,7 @@ import (
 	"immmodi/framework/router"
 )
 
-func JsonHandler(jsonString string) *router.Response {
+func JsonResonse(jsonString string) *router.Response {
 	jsonData, contentType := helpers.JsonStringParser(jsonString)
 
 	response := router.Response{

@@ -1,0 +1,9 @@
+package components 
+
+type HtmlData struct {
+    Title string
+}
+
+templ Test(name HtmlData) {
+    <h1>Hello from Test, {name.Title}</h1>
+}

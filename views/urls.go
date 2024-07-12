@@ -15,5 +15,6 @@ func GetAllRoutes() *router.Router {
 func DefineRoutes(r *router.Router) {
 	r.Route("GET", "/", Root)
 	r.Route("GET", "/test", Test)
-	r.Route("GET", "/j", J)
+	r.Route("GET", "/json", Json)
+	r.Route("GET", "/text", Text)
 }
