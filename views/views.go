@@ -6,6 +6,7 @@ import (
 	"immmodi/framework/helpers"
 	"immmodi/framework/router"
 	"net/http"
+	"strconv"
 )
 
 func Test(r *http.Request) *router.Response {
@@ -37,4 +38,18 @@ func Root(r *http.Request) *router.Response {
 
 func Text(r *http.Request) *router.Response {
 	return handlers.TextResponse("a test repoinse man")
+}
+
+func BasicEdit(r *http.Request) *router.Response {
+	integer := 0
+	return handlers.HtmlResponse(r, components.BasicEdit, strconv.Itoa(integer))
+}
+
+func BasicEditPost(r *http.Request) *router.Response {
+	numberString := r.FormValue("number")
+	number, err := strconv.Atoi(numberString)
+	if err != nil {
+		panic(err.Error())
+	}
+	return handlers.HtmlResponse(r, components.BasicEdit, strconv.Itoa(number+1))
 }

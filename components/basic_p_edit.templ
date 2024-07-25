@@ -1,0 +1,24 @@
+package components 
+
+templ BasicEdit(times string) {
+    <!DOCTYPE html>
+    <html lang="en">
+        @Header()    
+        <body>
+            @HelloWorld(times)
+
+            <form>
+                <input type="hidden" name="number" value={times} />
+
+                <button type="button"
+                    hx-post="/again"
+                    hx-trigger="click"
+                    hx-target="body"
+                    hx-swap="outerHTML"
+                >
+                    +1
+                </button>
+            </form>
+        </body>
+    </html>
+}

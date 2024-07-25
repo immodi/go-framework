@@ -8,7 +8,8 @@ import (
 )
 
 type Router struct {
-	routes []RouteEntry
+	routes      []RouteEntry
+	middlewares []func(r *http.Request)
 }
 
 type RouteEntry struct {
@@ -27,6 +28,10 @@ func (rtr *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		match := e.Match(r)
 		if !match {
 			continue
+		}
+
+		for _, middleware := range rtr.middlewares {
+			middleware(r)
 		}
 
 		e.Handler.ServeHTTP(w, r)
@@ -85,4 +90,8 @@ func (re *RouteEntry) Match(r *http.Request) bool {
 	}
 
 	return true
+}
+
+func (rtr *Router) UseMiddleware(middleware func(r *http.Request)) {
+	rtr.middlewares = append(rtr.middlewares, middleware)
 }
